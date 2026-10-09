@@ -39,6 +39,25 @@ Fail with `abort ()`; return 0 on success.
 - One feature per test. Name `pr<N>.c` for a PR, otherwise descriptive.
 - Do not scan for register numbers unless the test is about them.
 
+## Choosing the test type
+| Scenario | `dg-do` |
+|----------|---------|
+| Verify an instruction is (or is not) emitted | `compile` + scan |
+| Verify an instruction count | `compile` + `scan-assembler-times` |
+| Verify a run-time result | `run`, guarded by a `*_hw` effective target |
+
+Prefer `compile` tests for code generation: they run on any PowerPC test machine.
+Use `run` tests when correctness, not code generation, is what must be validated.
+
+## Writing robust tests
+- `-O2` by default; `-O0` only when testing unoptimized expansion.
+- Select the ISA with `-mdejagnu-cpu=powerN` rather than individual `-m` feature flags where possible.
+- One feature per test; do not combine independent features.
+- Descriptive file name (`pr<N>.c` for a PR); a comment at the top saying what the test validates.
+- Scan for the specific new instruction, not a generic pattern that would match without the change.
+- Do not hard-code register names unless the test is about register assignment.
+- Make sure the computation under test cannot be optimized away (use function arguments and return values; `volatile` or `__attribute__((noipa))` where needed).
+
 ## Effective targets
 | Compile-time | Meaning |
 |--------------|---------|
@@ -87,7 +106,15 @@ Results (in the build directory): `gcc/testsuite/gcc/gcc.sum` and `gcc.log`.
 2. `UNSUPPORTED`: the effective target is false on this machine.
 3. Wrong count in `scan-assembler-times`: check for unrolling/vectorization or a looser regex.
 
+## Expected output
+- One `.c` file per feature or fix in `gcc/testsuite/gcc.target/powerpc/`.
+- It contains `dg-do`, `dg-options`, `dg-require-effective-target` (if ISA-specific) and a `dg-final` scan or a run check.
+- It passes on the intended target and is skipped (`UNSUPPORTED`), not failed, elsewhere.
+
 ## Pitfalls
 - Unknown effective-target keyword: the test errors instead of being skipped.
+- Missing `dg-require-effective-target`: the test fails on targets without the ISA.
+- A scan regex that also matches other instructions (anchor with `\m...\M`).
+- A hard-coded register number that changes with allocation decisions.
 - Count that depends on optimization level or endianness without a selector.
 - `dg-do run` with no `*_hw` guard: fails on older hardware.

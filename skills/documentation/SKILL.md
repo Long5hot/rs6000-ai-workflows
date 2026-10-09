@@ -57,9 +57,26 @@ is enabled.
 ## Markup
 `@code{}` code/types, `@var{}` metasyntactic names, `@option{}` options, `@samp{}` literal values. Two spaces after a sentence-ending period.
 
+## Consistency checklist
+- [ ] Return and parameter types in `extend.texi` match the builtin's real signature.
+- [ ] The ISA requirement is stated (`-mcpu=power10`, `-mvsx`, ...).
+- [ ] The entry is under the correct ISA node, next to related entries.
+- [ ] One `@opindex` per option spelling, before `@item`.
+- [ ] The option name in `invoke.texi` equals the record name in `rs6000.opt`; the summary list is updated.
+- [ ] Restrictions (endianness, 64-bit only, alignment) are documented.
+
 ## Check
 - Build the manuals in the build dir: `make -C gcc info`. Fix every warning in the touched region.
 - Same patch as the implementation; ChangeLog: `* doc/extend.texi (<node name>): Document ...`.
+
+## Relevant files
+- `gcc/doc/extend.texi`, `gcc/doc/invoke.texi` — search, never read whole.
+- `gcc/config/rs6000/rs6000.opt` — source of truth for option names.
+- `gcc/config/rs6000/rs6000-builtins.def`, `rs6000-overload.def` — builtin names and signatures.
+
+## Expected output
+- `extend.texi` and/or `invoke.texi` updated in the right node, in the form of the adjacent entries.
+- No new Texinfo warnings.
 
 ## Pitfalls
 - `@opindex` after `@item` (old style; not used any more).

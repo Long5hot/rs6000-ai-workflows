@@ -45,7 +45,7 @@ command in any skill, workflow or template is conditional on it.
 
 | Policy | Meaning | Allowed | Forbidden |
 |--------|---------|---------|-----------|
-| `NO_BUILD` | not a Power host, no PowerPC compiler | read, grep, edit, git, host-independent `contrib/` scripts | configure, make, bootstrap, `make check`, building a cross compiler, compiling tests |
+| `NO_BUILD` | not a Power host, no PowerPC compiler | read, grep, edit, git, `bin/bz.py`, host-independent `contrib/` scripts | configure, make, bootstrap, `make check`, building a cross compiler, compiling tests |
 | `COMPILE_ONLY` | not a Power host, PowerPC compiler already exists | the above, plus that compiler with `-S` on single files | configure, make, bootstrap, `make check`, running test binaries |
 | `ASK_FIRST` | Power host | everything, after the user approves that specific action | starting any build or test run unasked |
 
@@ -55,6 +55,17 @@ command in any skill, workflow or template is conditional on it.
 - Never report a build or test as done unless it ran in this session. Record it as `NOT RUN (host)` in `TASK.md`.
 - `ASK_FIRST`: ask once per action, naming the command. Approval of an incremental build does not cover a bootstrap or `make check`.
 - Script unavailable: run `uname -sm`. Anything other than `ppc64le`, `ppc64` or `AIX` is `NO_BUILD`.
+
+---
+
+## Bug Numbers
+
+Prompt names a PR or Bugzilla number ("check bugzilla 123055", "regression analysis on
+123055", "fix bug 123055", "PR123055"): run `python3 .ai/bin/bz.py <N>` first (see
+`bugzilla` skill), then do what the prompt asks using that data. Never ask the user to
+paste the report or testcase.
+"Fix bug <N>" means the whole of `workflows/fix-bug.md`: fetch, root cause, patch, test,
+commit message, within the Host Gate.
 
 ---
 
@@ -96,7 +107,7 @@ command in any skill, workflow or template is conditional on it.
 
 - Every new user-visible builtin requires an entry in `gcc/doc/extend.texi`.
 - Every new option requires an entry in `gcc/doc/invoke.texi`.
-- Follow existing Texinfo formatting exactly (spacing, node structure, `@deftypefn`).
+- Follow existing Texinfo formatting exactly (spacing, node structure, the form of adjacent entries).
 - Keep documentation in sync with implementation in the same patch.
 
 ---

@@ -10,6 +10,12 @@ Run `sh .ai/bin/env-check.sh` (see `AGENTS.md`). Record the `policy=` line in `T
 
 ---
 
+## Step 0b: Bug report
+
+If the task has a PR number, fetch it: `python3 .ai/bin/bz.py <N>` (`bugzilla` skill).
+
+---
+
 ## Step 1: Determine the task name
 
 Choose a short, lowercase, hyphenated identifier.

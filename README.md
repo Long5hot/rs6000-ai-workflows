@@ -38,6 +38,7 @@ All files write the path as `.ai/`. That is a placeholder for whatever name you 
 ├── AGENTS.md            — Concise standing instructions for every task.
 ├── repo-map.md          — Quick reference map of rs6000-relevant source files.
 ├── bin/env-check.sh     — Host detection: prints the build/test policy for this machine.
+├── bin/bz.py            — Fetch a Bugzilla PR compactly (curl + jq).
 │
 ├── skills/              — Reusable skill documents. One per topic.
 │   ├── review-patch/
@@ -48,7 +49,6 @@ All files write the path as `.ai/`. That is a placeholder for whatever name you 
 │   ├── register-allocation/
 │   ├── dejagnu/
 │   ├── regression-analysis/
-│   ├── bootstrap/
 │   ├── documentation/
 │   ├── commit-message/
 │   ├── patch-submission/
@@ -59,7 +59,8 @@ All files write the path as `.ai/`. That is a placeholder for whatever name you 
 │   ├── option-files/
 │   ├── rtl-pass-order/
 │   ├── contrib-git-tools/
-│   └── test-results/
+│   ├── test-results/
+│   └── bugzilla/
 │
 ├── templates/           — Empty task templates. Never fill in task-specific data here.
 │   ├── bug/
@@ -71,6 +72,7 @@ All files write the path as `.ai/`. That is a placeholder for whatever name you 
 │
 ├── workflows/           — Step-by-step workflow guides.
 │   ├── new-task.md
+│   ├── fix-bug.md
 │   ├── implement-feature.md
 │   ├── review-patch.md
 │   ├── regression.md
@@ -111,7 +113,7 @@ Skills are loaded on demand — only when relevant to the current task.
 | Review patch           | `review-patch`, `rtl-patterns`                    |
 | Fix register bug       | `register-allocation`, `rtl-patterns`             |
 | Write optimization     | `optimization`, `rtl-patterns`                    |
-| Fix regression         | `regression-analysis`, `bootstrap`                |
+| Fix regression         | `regression-analysis`                             |
 | Write tests            | `dejagnu`                                         |
 | Write/update docs      | `documentation`                                   |
 | Write commit message   | `commit-message`                                  |
@@ -123,6 +125,7 @@ Skills are loaded on demand — only when relevant to the current task.
 | Add `-m` option        | `option-files`, `documentation`                   |
 | ChangeLog / style check| `contrib-git-tools`                               |
 | Compare test results   | `test-results`                                    |
+| Prompt names a PR      | `bugzilla` (runs `bin/bz.py`)                     |
 
 Do not pre-load all skills. Load only what the current task requires.
 

@@ -21,7 +21,7 @@ Repeated passes take a numeric suffix in the dump name: `cprop1`, `late_combine1
 ## Facts
 - `simplify-rtx.cc` is a library, not a pass; combine, cse, fwprop call it.
 - LRA runs as pass `reload`: dump is `-fdump-rtl-reload`. There is no `-fdump-rtl-lra`.
-- rs6000 is LRA-only (`-mlra` is an ignored legacy option).
+- rs6000 is IRA + LRA; it never falls back to the classic reload pass (`reload.cc`). `reload_completed`, `TARGET_SECONDARY_RELOAD` and the `reload_*` patterns are still live: LRA uses them (`register-allocation` skill).
 - `define_split` runs in `split1`..`split5` and inside combine; `define_peephole2` only in `peephole2` (hard regs; `match_scratch` allowed).
 - Pseudos before `ira`; hard registers after `reload`.
 

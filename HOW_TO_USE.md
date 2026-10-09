@@ -30,6 +30,7 @@ For GCC PowerPC backend tasks in this workspace:
 - Always read .ai/AGENTS.md at the start of a conversation if not already loaded.
 - Run `sh .ai/bin/env-check.sh` first and obey its policy= line. Never configure, build or test GCC unless it says ASK_FIRST and I approve.
 - Always consult .ai/repo-map.md before searching the repository.
+- When I name a PR or bug number, run `python3 .ai/bin/bz.py <N>` first and work from its output.
 - Load skills from .ai/skills/ on demand only. Never pre-load all skills.
 - Store all task-specific notes in .ai/work/<task-name>/TASK.md.
 - Never modify .ai/AGENTS.md, skills/, templates/, or workflows/.
@@ -124,7 +125,7 @@ Use only what the current task needs:
 | Review a patch | `review-patch`, `rtl-patterns` |
 | Fix register bug | `register-allocation`, `rtl-patterns` |
 | Write optimization | `optimization`, `rtl-patterns` |
-| Fix regression | `regression-analysis`, `bootstrap` |
+| Fix regression | `regression-analysis` |
 | Write tests only | `dejagnu` |
 | Write/update docs | `documentation` |
 | Write commit message | `commit-message` |
@@ -190,7 +191,7 @@ Update TASK.md with the current status, root cause, and next step.
 | `.ai/repo-map.md` | Before any file search |
 | `.ai/skills/<name>/SKILL.md` | When the task requires that topic |
 | `.ai/work/<task>/TASK.md` | At start of follow-up conversations |
-| `.ai/workflows/<name>.md` | For structured multi-step tasks |
+| `.ai/workflows/<name>.md` | For structured multi-step tasks (`fix-bug.md`: "fix bug <N>") |
 | `.ai/templates/<type>/TEMPLATE.md` | When creating a new task workspace |
 
 ---

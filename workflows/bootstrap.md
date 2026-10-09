@@ -1,8 +1,6 @@
 # Workflow: Bootstrap Validation
 
 Use this workflow to validate a change before submission.
-Load the `bootstrap` skill before starting.
-
 **Host Gate (`AGENTS.md`):** only on a Power host, and only after the user approves each
 build or test run. On any other host, stop here and give the user Steps 2–5 as commands.
 
@@ -10,8 +8,7 @@ build or test run. On any other host, stop here and give the user Steps 2–5 as
 
 ## Step 1: Determine the rebuild scope
 
-Consult the incremental rebuild table in the `bootstrap` skill.
-Identify the minimum set of targets to rebuild.
+One `.cc` file: `make -C gcc/ rs6000.o` is a quick compile check. Anything else:
 
 ```sh
 make -C gcc/ -j$(nproc)

@@ -29,7 +29,23 @@ RTL after instruction selection
  RTL with hard registers
 ```
 
-rs6000 uses LRA only (`-mlra` is an ignored legacy option). `reload.cc` is not used by rs6000.
+rs6000 runs IRA then LRA. There is no fallback to the classic reload pass on trunk:
+`do_reload` in `gcc/ira.cc` calls either `lra ()` or `reload ()` according to
+`targetm.lra_p ()`, rs6000 does not override that hook (default: true), and `-mlra` has
+been an ignored stub since 2017 (commit 7a5cbf29beb). `gcc/reload.cc` and `reload1.cc`
+are still built for other targets but never run for rs6000. Old release branches
+(GCC 7 and earlier) did have `-mno-lra`.
+
+"Reload" as a name is still everywhere and is live code for rs6000, used by LRA:
+
+| Name | What it is |
+|------|------------|
+| pass `reload`, `-fdump-rtl-reload` | the pass that runs LRA |
+| `reload_completed` | true after LRA; used in split conditions (`"&& reload_completed"`) |
+| `lra_in_progress` | true while LRA runs |
+| `TARGET_SECONDARY_RELOAD` → `rs6000_secondary_reload` | tells LRA when a move needs a scratch or intermediate register |
+| `reload_<mode>_<...>` patterns in `rs6000.md`, `mma.md` | secondary reload helper patterns invoked through that hook |
+| "a reload" | a copy LRA inserts to satisfy a constraint |
 
 ---
 

@@ -8,6 +8,11 @@ Load the `regression-analysis` skill before starting.
 Host Gate (`AGENTS.md`): Steps 1, 3, 4 and 7 run a build or the compiler. Without a Power
 host, work from the `.sum`/`.log`/dump files the user provides and ask for missing ones.
 
+## Step 0: Fetch the report
+
+If a PR number is given: `python3 .ai/bin/bz.py <N>` (`bugzilla` skill). Take the failing
+test, options, target and first bad revision from it.
+
 ## Step 1: Reproduce the failure
 
 ```sh
