@@ -6,6 +6,20 @@ without regeneration.
 
 ---
 
+## Installation and Directory Name
+
+Clone into the root of the GCC checkout, named `.` + the assistant you use:
+
+```sh
+git clone <this-repo-url> .bob        # or .claude, .copilot, ...
+```
+
+All files write the path as `.ai/`. That is a placeholder for whatever name you chose;
+`AGENTS.md` tells the assistant to substitute the real directory, and
+`bin/env-check.sh` prints it as `framework=`. Nothing needs editing after a rename.
+
+---
+
 ## Design Principles
 
 - **Retrieval over loading.** Read only the files and functions needed for the current task.
@@ -23,6 +37,7 @@ without regeneration.
 ├── README.md            — This file. Framework overview and usage guide.
 ├── AGENTS.md            — Concise standing instructions for every task.
 ├── repo-map.md          — Quick reference map of rs6000-relevant source files.
+├── bin/env-check.sh     — Host detection: prints the build/test policy for this machine.
 │
 ├── skills/              — Reusable skill documents. One per topic.
 │   ├── review-patch/
@@ -35,7 +50,16 @@ without regeneration.
 │   ├── regression-analysis/
 │   ├── bootstrap/
 │   ├── documentation/
-│   └── commit-message/
+│   ├── commit-message/
+│   ├── patch-submission/
+│   ├── rtl-canonical-forms/
+│   ├── md-iterators-splits/
+│   ├── match-pd/
+│   ├── target-hooks/
+│   ├── option-files/
+│   ├── rtl-pass-order/
+│   ├── contrib-git-tools/
+│   └── test-results/
 │
 ├── templates/           — Empty task templates. Never fill in task-specific data here.
 │   ├── bug/
@@ -56,6 +80,15 @@ without regeneration.
 └── work/                — Task workspaces. One subdirectory per task.
     └── <task-name>/     — All notes, findings, and drafts for that task only.
 ```
+
+---
+
+## Host Gate
+
+Most development happens on a non-Power machine (e.g. macOS arm64) where GCC for
+PowerPC cannot be built or tested. `bin/env-check.sh` detects the host and prints a
+policy (`NO_BUILD`, `COMPILE_ONLY`, `ASK_FIRST`). `AGENTS.md` makes every assistant run
+it first and obey it: no builds off Power, and on Power only after asking.
 
 ---
 
@@ -82,6 +115,14 @@ Skills are loaded on demand — only when relevant to the current task.
 | Write tests            | `dejagnu`                                         |
 | Write/update docs      | `documentation`                                   |
 | Write commit message   | `commit-message`                                  |
+| Post / ping a patch    | `patch-submission`                                |
+| Pattern never matches  | `rtl-canonical-forms`, `rtl-pass-order`           |
+| Multi-mode pattern     | `md-iterators-splits`                             |
+| Edit `match.pd`        | `match-pd`                                        |
+| Add / read target hook | `target-hooks`                                    |
+| Add `-m` option        | `option-files`, `documentation`                   |
+| ChangeLog / style check| `contrib-git-tools`                               |
+| Compare test results   | `test-results`                                    |
 
 Do not pre-load all skills. Load only what the current task requires.
 

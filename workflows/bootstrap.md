@@ -3,6 +3,9 @@
 Use this workflow to validate a change before submission.
 Load the `bootstrap` skill before starting.
 
+**Host Gate (`AGENTS.md`):** only on a Power host, and only after the user approves each
+build or test run. On any other host, stop here and give the user Steps 2–5 as commands.
+
 ---
 
 ## Step 1: Determine the rebuild scope
@@ -10,12 +13,6 @@ Load the `bootstrap` skill before starting.
 Consult the incremental rebuild table in the `bootstrap` skill.
 Identify the minimum set of targets to rebuild.
 
-For changes touching only `.md` files:
-```sh
-make -C gcc/ insn-recog.o insn-output.o insn-attrtab.o -j$(nproc)
-```
-
-For changes touching `.cc` or `.h` files:
 ```sh
 make -C gcc/ -j$(nproc)
 ```
@@ -50,8 +47,8 @@ cd <build-directory>
 make bootstrap -j$(nproc) 2>&1 | tail -50
 ```
 
-A successful bootstrap produces three identical compilers (stage1, stage2, stage3).
-If stage 2 ≠ stage 3, there is a codegen correctness bug.
+A successful bootstrap ends with the stage 2 and stage 3 object files comparing identical.
+If they differ, the patched compiler miscompiled itself.
 
 ## Step 5: Post-bootstrap regression test
 

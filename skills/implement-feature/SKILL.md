@@ -1,3 +1,7 @@
+---
+name: implement-feature
+description: Checklist for implementing an rs6000 feature or RTL optimization: where it belongs, files to touch, validation.
+---
 # Skill: implement-feature
 
 ## Purpose
@@ -95,29 +99,14 @@ Do not expand the scope unless absolutely necessary.
 
 Before implementing any optimization, determine where it naturally belongs.
 
-Typical RTL flow:
+Typical RTL flow (dump names; full list in the `rtl-pass-order` skill):
 
 ```
-GIMPLE
-    ↓
-RTL Expansion
-    ↓
-combine
-    ↓
-simplify-rtx
-    ↓
-cse
-    ↓
-fwprop
-    ↓
-ifcvt
-    ↓
-reload / LRA
-    ↓
-peephole2
-    ↓
-final
+GIMPLE → expand → cse1 → fwprop1 → ce1 → cse2 → combine → split1
+       → ira → reload (LRA) → split2 → peephole2 → sched2 → final
 ```
+
+`simplify-rtx.cc` is a library used by combine, cse and fwprop, not a pass.
 
 Determine:
 
@@ -209,7 +198,7 @@ Search for existing uses of:
 - `vec_concat`
 - `parallel`
 
-Use the canonical RTL form expected by GCC.
+Use the canonical RTL form expected by GCC (`rtl-canonical-forms` skill). Both the pattern and the code that generates the RTL must use it.
 
 Do not introduce alternate RTL forms unless required.
 
@@ -300,7 +289,6 @@ Consider:
 - earlyclobber
 - matching constraints
 - secondary reloads
-- reload inheritance
 - LRA behaviour
 - hard register requirements
 - register pressure
@@ -357,7 +345,7 @@ Useful options:
 -fdump-rtl-cse1
 -fdump-rtl-fwprop1
 -fdump-rtl-ira
--fdump-rtl-lra
+-fdump-rtl-reload
 -fdump-rtl-final
 ```
 
@@ -365,14 +353,15 @@ Inspect the dumps to verify that:
 
 - combine produced the expected RTL
 - simplify-rtx did not undo it
-- reload preserved it
+- LRA (pass `reload`) preserved it
 - final emitted the intended instruction
 
 ---
 
 ## 14. Validation
 
-Perform incremental builds whenever possible.
+Host Gate (`AGENTS.md`): build and test only on a Power host, after the user approves.
+Otherwise list the commands for the user.
 
 Examples:
 
@@ -380,15 +369,7 @@ Examples:
 make -C gcc rs6000.o
 ```
 
-If machine descriptions changed:
-
-Rebuild generated files:
-
-- insn-recog
-- insn-output
-- insn-emit
-- insn-attrtab
-- insn-extract
+If machine descriptions changed, `make -C gcc` in the build dir regenerates and rebuilds the `insn-*.cc` files.
 
 Run:
 
@@ -426,7 +407,7 @@ RTL Optimization:
 - `gcc/rtlanal.cc`
 - `gcc/emit-rtl.cc`
 - `gcc/optabs.cc`
-- `gcc/reload1.cc`
+- `gcc/ira*.cc`
 - `gcc/lra*.cc`
 - `gcc/final.cc`
 
@@ -448,7 +429,7 @@ Testing:
 - Documentation updates where applicable.
 - Proper commit message following the `commit-message` skill.
 - Explanation of why the chosen implementation location is correct.
-- Description of how the optimization interacts with combine, simplify-rtx, reload/LRA, and final instruction selection.
+- Description of how the optimization interacts with combine, simplify-rtx, LRA, and final instruction selection.
 
 ---
 
@@ -460,7 +441,7 @@ Testing:
 - Forgetting `TARGET_*` guards.
 - Creating duplicate optimizations already handled elsewhere.
 - Using new predicates when existing ones are sufficient.
-- Missing reload/LRA implications.
+- Missing LRA implications.
 - Breaking instruction recognition due to incorrect constraints.
 - Writing tests that never trigger the optimization.
 - Forgetting to inspect RTL dumps when debugging optimization behavior.

@@ -47,12 +47,8 @@ Work through each section of the `review-patch` skill:
 
 ## Step 6: Produce the review
 
-Structure the output:
-1. **Summary** — what the patch does (one paragraph)
-2. **Issues** — numbered list of problems found (if any)
-3. **Suggestions** — non-blocking improvements (if any)
-4. **Tests** — coverage assessment
-5. **Verdict** — OK / Needs changes / Not OK
+Use the section list under "Expected Output" in the `review-patch` skill.
+Within each section, mark every item as blocking or suggestion.
 
 Record the review in the task workspace (`TASK.md` or `review-notes.md`).
 

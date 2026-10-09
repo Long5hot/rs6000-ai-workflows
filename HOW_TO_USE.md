@@ -9,7 +9,7 @@ and consumes the minimum number of tokens.
 ## Prerequisites
 
 - IBM Bob is available in your editor or IDE.
-- This `.ai/` directory exists at the root of your GCC checkout.
+- This framework directory exists at the root of your GCC checkout, named `.` + your assistant (`.bob`, `.claude`, `.copilot`, ...). This document writes it as `.ai/`; type the real name in commands and in the custom instructions below.
 - To reuse the framework in a new worktree or branch:
   ```sh
   cp -r /path/to/original-gcc/.ai /path/to/new-gcc-worktree/
@@ -28,6 +28,7 @@ these instructions at the start of every conversation.
 For GCC PowerPC backend tasks in this workspace:
 
 - Always read .ai/AGENTS.md at the start of a conversation if not already loaded.
+- Run `sh .ai/bin/env-check.sh` first and obey its policy= line. Never configure, build or test GCC unless it says ASK_FIRST and I approve.
 - Always consult .ai/repo-map.md before searching the repository.
 - Load skills from .ai/skills/ on demand only. Never pre-load all skills.
 - Store all task-specific notes in .ai/work/<task-name>/TASK.md.
@@ -35,6 +36,29 @@ For GCC PowerPC backend tasks in this workspace:
 - Read only the functions needed — never entire source files.
 - Use FindSymbol and grep rather than reading whole files.
 - Search the repository before asking questions.
+```
+
+---
+
+## Automatic Host Detection
+
+`bin/env-check.sh` prints the host, any build directory or PowerPC cross compiler it
+finds, which `contrib/` scripts can run, and one `policy=` line. `AGENTS.md` tells the
+assistant to run it first. To name a build directory explicitly:
+`export GCC_BUILD_DIR=/path/to/build`.
+
+To make it automatic in Claude Code (no reliance on the model remembering), add a
+session-start hook to `.claude/settings.json` in the GCC checkout; its output is put
+into the model's context at the start of every session (here the framework is named `.claude`):
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [ { "type": "command", "command": "sh .claude/bin/env-check.sh" } ] }
+    ]
+  }
+}
 ```
 
 ---
@@ -111,7 +135,7 @@ Example prompt:
 Load the rs6000-builtins and dejagnu skills. Then implement the builtin.
 ```
 
-Bob reads the two skill files (~100 lines each) and proceeds.
+Bob reads the two skill files (under 100 lines each) and proceeds.
 
 ---
 
@@ -175,14 +199,14 @@ Update TASK.md with the current status, root cause, and next step.
 
 | What Bob reads | Approximate lines |
 |----------------|------------------|
-| `AGENTS.md` (always) | ~100 |
-| `repo-map.md` (always) | ~145 |
-| One skill file | ~100–130 |
+| `AGENTS.md` (always) | ~115 |
+| `repo-map.md` (always) | ~170 |
+| One skill file | ~30–160 (`implement-feature`: ~440) |
 | Task workspace (`TASK.md`) | ~50–80 |
 | A single function via `FindSymbol` | ~30–100 |
 | **Total per session** | **~400–550** |
 
-Compare this to loading `rs6000.cc` in full: **29,397 lines**.
+Compare this to loading `rs6000.cc` in full: about **29,700 lines**.
 
 The framework keeps Bob productive at roughly **1–2% of the token cost**
 of an unstructured session on the same codebase.

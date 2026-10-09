@@ -1,3 +1,7 @@
+---
+name: optimization
+description: Add or debug an rs6000 peephole2, target-specific RTL pass or missed optimization.
+---
 # Skill: optimization
 
 ## Purpose
@@ -49,7 +53,7 @@ Use `define_peephole2` for RTL-level peepholes:
 
 Rules:
 - Peephole patterns fire after reload, so operands are fully allocated.
-- The replacement sequence must use only the registers present in the input.
+- A new temporary must be requested with `match_scratch` in the input sequence; it is granted only if a hard register is free there.
 - Peepholes must not increase code size unless under a profile/cost guard.
 
 ### Writing a target-specific pass
@@ -62,7 +66,7 @@ Rules:
 ### Evaluating a missed optimization
 
 1. Reproduce with `-O2 -mcpu=powerXX` and the appropriate `-m` flags.
-2. Use `-fdump-rtl-combine` to see what combine attempted.
+2. Use `-fdump-rtl-combine-details` to see what combine attempted (`Failed to match this instruction`).
 3. Use `-fdump-rtl-peephole2` to see what peepholes matched.
 4. Use `-dp` (debug assembly) to see which pattern was selected.
 5. If combine did not fold: check whether the RTL shape matches an existing pattern. If not, add a pattern (see `rtl-patterns` skill).

@@ -1,3 +1,7 @@
+---
+name: bootstrap
+description: Plan, run and diagnose a GCC build, bootstrap and regression test for rs6000 changes (Power host only, after the user approves).
+---
 # Skill: bootstrap
 
 ## Purpose
@@ -11,17 +15,25 @@ and diagnose bootstrap failures.
 
 ---
 
+## Host Gate
+Run the Host Gate check first (`AGENTS.md`). `NO_BUILD` / `COMPILE_ONLY`: run nothing
+from this skill; give the commands to the user. `ASK_FIRST`: ask before each build or
+test run; never start a bootstrap or `make check` unasked.
+
+---
+
 ## Bootstrap Levels
 
 | Level | What runs | When to use |
 |-------|-----------|-------------|
 | **Incremental build** | `make -j N` | Quick check after small changes |
-| **Stage 1 only** | `make stage1` or `make all-gcc` | Compiler-only changes, no self-hosting check |
+| **Stage 1 only** | `make stage1-bubble` | Compiler-only changes, no self-hosting check |
 | **Full bootstrap** | `make bootstrap` | Required before submitting any patch |
 | **Bootstrap + regtest** | `make bootstrap && make -k check` | Full validation for significant changes |
 
-For rs6000-only changes, a full bootstrap with `--target=powerpc64le-linux-gnu`
-(or your native target) is the minimum acceptable validation.
+Bootstrap needs a native build on PowerPC (e.g. powerpc64le-linux-gnu); a cross
+compiler cannot bootstrap. A full native bootstrap plus regression test is the
+minimum acceptable validation; add big-endian when the change is endian-sensitive.
 
 ---
 
@@ -31,15 +43,8 @@ Use this to quickly rebuild after changing specific files:
 
 | Changed file | Rebuild command |
 |-------------|-----------------|
-| `rs6000.cc` | `make -C gcc/ rs6000.o` |
-| `rs6000.md` or any `.md` file | `make -C gcc/ insn-recog.o insn-output.o insn-attrtab.o` |
-| `rs6000-builtin.cc` | `make -C gcc/ rs6000-builtin.o` |
-| `rs6000-builtins.def` | `make -C gcc/ s-rs6000-builtins` then rebuild affected objects |
-| `predicates.md` | `make -C gcc/ insn-recog.o` |
-| `constraints.md` | `make -C gcc/ insn-recog.o` |
-| `rs6000.opt` | `make -C gcc/ options.o` |
-| `rs6000-cpus.def` | `make -C gcc/ rs6000.o` |
-| `rs6000.h` | `make -C gcc/` (header change may require broader rebuild) |
+| One `.cc` file, quick compile check | `make -C gcc/ rs6000.o` (or `rs6000-builtin.o`, ...) |
+| Anything else (`.md`, `.def`, `.opt`, `.h`) | `make -C gcc/ -j$(nproc)` — generated files (`insn-*.cc`, `rs6000-builtins.cc`, `options.h`) are rebuilt automatically |
 
 For header changes (`rs6000.h`, `rs6000-internal.h`), prefer a full `make -C gcc/` to catch all dependencies.
 
@@ -70,7 +75,7 @@ For header changes (`rs6000.h`, `rs6000-internal.h`), prefer a full `make -C gcc
    ```sh
    make -k check
    ```
-   Compare results against the baseline (unpatched tree) using `contrib/compare_tests`.
+   Compare results against the baseline (unpatched tree): `contrib/compare_tests <baseline-build-dir> <patched-build-dir>`.
 
 ### Diagnosing a bootstrap failure
 
@@ -78,7 +83,7 @@ Bootstrap failures occur in stage 2 or stage 3. The failure message identifies w
 
 **Stage 2 build error (compiler-built-by-stage1 failing to compile stage2):**
 - Usually a C/C++ syntax error or ABI issue introduced in the patch.
-- Fix the error; rerun from stage 2: `make stage2`.
+- Fix the error and rerun `make`.
 
 **Stage 2/3 comparison failure (`make compare`):**
 - Stage 2 and stage 3 compilers produce different binaries.
@@ -111,7 +116,7 @@ Adding Fortran or other frontends is not necessary unless the change touches the
 - `gcc/config/rs6000/rs6000.md` + feature `.md` files — pattern changes affecting codegen
 - `Makefile.in`, `gcc/Makefile.in` — build rules
 - `config.log` — configuration errors
-- `gcc/stage1/`, `gcc/stage2/`, `gcc/stage3/` — stage output directories
+- `stage1-gcc/`, `prev-gcc/`, `gcc/` in the build directory — per-stage compiler directories
 
 ---
 
@@ -124,6 +129,6 @@ Adding Fortran or other frontends is not necessary unless the change touches the
 
 ## Common Pitfalls
 - Submitting without bootstrap because "it's a small change" — small `.md` or `.h` changes can cause stage 2/3 divergence.
-- Running bootstrap without `-disable-multilib` on a host that supports multilib — multilib failures may be pre-existing.
+- Running bootstrap without `--disable-multilib` on a host that supports multilib — multilib failures may be pre-existing.
 - Not comparing regression results against baseline — a new failure may exist that bootstrap alone does not reveal.
 - Forgetting to run the PowerPC test suite specifically: `make check-gcc RUNTESTFLAGS="powerpc.exp"`.

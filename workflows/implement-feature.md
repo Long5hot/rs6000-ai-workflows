@@ -17,7 +17,7 @@ Load the `implement-feature` skill before starting.
 # Example: find similar instruction patterns
 grep -r "define_insn.*xvbf16" gcc/config/rs6000/
 # Example: find similar builtin definitions
-grep -n "BU_P10" gcc/config/rs6000/rs6000-builtins.def | head -20
+grep -n -A12 '^\[power10\]' gcc/config/rs6000/rs6000-builtins.def
 ```
 
 - Read the similar implementation completely.
@@ -39,12 +39,15 @@ Follow this order to avoid forward references:
 5. `predicates.md` — new predicate (if needed)
 6. `rs6000-builtins.def` — builtin entry
 7. `rs6000-overload.def` — overload entry (if overloaded)
-8. `rs6000-builtin.cc` — expansion case
+8. `rs6000-builtin.cc` — only if the builtin needs special expansion or folding
 9. `rs6000.cc` — initialization or hook update (if needed)
 10. Documentation
 11. Test
 
 ## Step 5: Incremental build check
+
+Host Gate (`AGENTS.md`) applies to Steps 5, 6 and 8: without a Power host, skip the
+commands and list them for the user.
 
 After each major change:
 ```sh
@@ -89,5 +92,5 @@ Record the final commit message in `TASK.md`.
 ## Step 10: Submit
 
 Post to `gcc-patches@gcc.gnu.org`.
-CC the rs6000 maintainers.
+CC the rs6000 maintainers (`grep -n 'rs6000/powerpc port' MAINTAINERS`). Follow the `patch-submission` skill.
 Record the mailing list URL in `TASK.md`.

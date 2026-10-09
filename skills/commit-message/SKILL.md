@@ -1,3 +1,7 @@
+---
+name: commit-message
+description: Write a GCC commit message: subject with [PRn], body, tab-indented ChangeLog with PR target/N lines.
+---
 # Skill: commit-message
 
 ## Purpose
@@ -13,7 +17,7 @@ and are suitable for submission to gcc-patches@gcc.gnu.org.
 ## GCC Commit Message Format
 
 ```
-<subsystem>: <short summary line (≤65 characters)>
+<subsystem>: <short summary> [PR<number>]
 
 <body: motivation and overview>
 
@@ -23,14 +27,17 @@ and are suitable for submission to gcc-patches@gcc.gnu.org.
 
 gcc/ChangeLog:
 
+	PR target/<number>
 	* config/rs6000/<file>.cc (<function>): <change description>.
 	* config/rs6000/<file>.md (<pattern>): <change description>.
-	* doc/extend.texi (<builtin>): Document new builtin.
+	* doc/extend.texi (<node>): Document new builtin.
 
 gcc/testsuite/ChangeLog:
 
+	PR target/<number>
 	* gcc.target/powerpc/<test>.c: New test.
 ```
+Omit the `[PR…]` tag and `PR` lines when there is no Bugzilla PR.
 
 ---
 
@@ -38,7 +45,8 @@ gcc/testsuite/ChangeLog:
 
 ### Subject line
 - Start with the subsystem: `rs6000:`, `middle-end:`, `IRA:`, etc.
-- Keep under 65 characters.
+- Keep it short; most rs6000 subjects are under 75 characters including the PR tag.
+- If it fixes a PR, end with `[PR<number>]`.
 - Use imperative mood: "Add", "Fix", "Implement", not "Added", "Fixed".
 - Do not end with a period.
 - Be specific: "rs6000: Add Power10 vec_extracth builtin" not "rs6000: Fix bug".
@@ -46,7 +54,7 @@ gcc/testsuite/ChangeLog:
 ### Body
 - First paragraph: state **what** changed and **why** (motivation).
 - Second paragraph (optional): state **how** it was implemented.
-- Third paragraph: state **how** it was tested.
+- Third paragraph: state **how** it was tested. Only what actually ran; never invent a bootstrap/regtest result (Host Gate, `AGENTS.md`).
 - Separate paragraphs with blank lines.
 - Wrap at 72 characters.
 - Do not duplicate the ChangeLog entries in the body.
@@ -55,71 +63,42 @@ gcc/testsuite/ChangeLog:
 - One `ChangeLog:` section per top-level directory changed.
 - For rs6000 work: `gcc/ChangeLog:` and `gcc/testsuite/ChangeLog:`.
 - Format: `\t* <file> (<symbol>): <action>.`
-- Use a tab (`\t`) for indentation — not spaces.
+- Use a tab (`\t`) for indentation — not spaces. The checker rejects spaces.
+- PR line: `\tPR <component>/<number>`, where component is the Bugzilla component (`target` for backend bugs, never `rs6000`).
+- Verify with `git gcc-verify` (see `patch-submission` skill).
 - Use the actual function, pattern, or macro name as the symbol.
 - For new files: `* <file>: New file.`
 - For new tests: `* gcc.target/powerpc/<test>.c: New test.`
-- For documentation: `* doc/extend.texi (<@node or builtin>): Document.`
+- For documentation: `* doc/extend.texi (<node name>): Document ...`
 - Actions: "New function.", "New pattern.", "Add case for ...", "Fix ...", "Document.", "Removed.", "Update to ...", "Handle ...".
 
 ---
 
-## Example: Adding a builtin
+## Example (real commit 9b8d4dd3ed3)
 
 ```
-rs6000: Implement __builtin_mma_xvf64gerpp for Power10
+rs6000: Fix vec_permx wrong-code [PR125138]
 
-Power10 introduces the XVBF16GER2PP instruction for accumulating
-BF16 outer products.  This patch implements the corresponding GCC
-builtin __builtin_mma_xvbf16ger2pp and adds the instruction pattern.
+The little-endian expansion of vec_permx modified the permute control
+vector. When the same control vector was used by multiple vec_permx
+calls, later calls used the modified value and produced incorrect
+results.
 
-The builtin is guarded by TARGET_MMA and TARGET_POWER10 and follows
-the existing MMA builtin convention using ACC and VSR operands.
-
-Tested with a full bootstrap and regression test on powerpc64le-linux-gnu
-with no new failures.
+Generate the negated control vector in a new pseudo register instead of
+modifying the input operand.
 
 gcc/ChangeLog:
 
-	* config/rs6000/rs6000-builtin.cc (rs6000_expand_builtin):
-	Handle RS6000_BIF_MMA_XVBF16GER2PP.
-	* config/rs6000/rs6000-builtins.def (BU_MMA_2): New entry for
-	__builtin_mma_xvbf16ger2pp.
-	* config/rs6000/mma.md (mma_xvbf16ger2pp): New pattern.
-	* doc/extend.texi (__builtin_mma_xvbf16ger2pp): Document.
+	PR target/125138
+	* config/rs6000/vsx.md (xxpermx): Use a temporary register for the
+	negated control vector.
 
 gcc/testsuite/ChangeLog:
 
-	* gcc.target/powerpc/mma-xvbf16ger2pp.c: New test.
+	PR target/125138
+	* gcc.target/powerpc/pr125138.c: New test.
 ```
-
----
-
-## Example: Fixing a regression
-
-```
-rs6000: Fix incorrect vec_sel codegen on LE POWER9
-
-vec_sel was emitting xxsel with swapped operands in little-endian mode
-when one operand was loaded from memory.  The issue was in the
-rs6000_expand_vector_select function which did not account for the
-LE byte swap applied to the mask.
-
-Fixed by reversing the mask operand order when TARGET_LITTLE_ENDIAN
-is true and the mask has been folded into a constant.
-
-Regression test added to cover the specific RTL shape that triggered
-the bug.
-
-gcc/ChangeLog:
-
-	* config/rs6000/rs6000-call.cc (rs6000_expand_vector_select):
-	Reverse mask operand order for LE targets.
-
-gcc/testsuite/ChangeLog:
-
-	* gcc.target/powerpc/vec-sel-le-regression.c: New test.
-```
+(As committed, the headers read `gcc/` and `gcc/testsuite/` — both spellings are accepted — and a `YYYY-MM-DD  Name  <email>` author line precedes them.)
 
 ---
 

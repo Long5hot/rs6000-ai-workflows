@@ -1,152 +1,93 @@
+---
+name: dejagnu
+description: Write, run or debug a PowerPC DejaGnu test (dg directives, effective targets, -mdejagnu-cpu, anchored assembler scans).
+---
 # Skill: dejagnu
 
-## Purpose
-Write, modify, and maintain GCC DejaGnu testcases for the rs6000/PowerPC backend.
+Tests: `gcc/testsuite/gcc.target/powerpc/`. Keywords: `gcc/testsuite/lib/target-supports.exp`.
+Directive reference: `gcc/doc/sourcebuild.texi` (its PowerPC keyword list is incomplete; trust `target-supports.exp`).
 
-## When to Use
-- Writing a new testcase for a feature, bugfix, or optimization
-- Debugging a failing testcase
-- Understanding how a testcase works
-- Ensuring correct use of effective-target keywords
-
----
-
-## Test File Structure
-
+## Compile test (codegen)
 ```c
 /* { dg-do compile } */
-/* { dg-options "-O2 -mcpu=power9" } */
-/* { dg-require-effective-target powerpc_p9vector_ok } */
+/* { dg-options "-O2 -mdejagnu-cpu=power9 -mvsx" } */
+/* { dg-require-effective-target powerpc_vsx } */
 
+/* What this test verifies.  */
 #include <altivec.h>
 
-vector int foo (vector int a, vector int b)
+vector int
+foo (vector int a, vector int b)
 {
   return vec_add (a, b);
 }
 
-/* { dg-final { scan-assembler-times "vadduwm" 1 } } */
+/* { dg-final { scan-assembler-times {\mvadduwm\M} 1 } } */
 ```
 
-Key directives:
-- `dg-do` — test action: `compile`, `assemble`, `run`, `link`
-- `dg-options` — additional compiler flags
-- `dg-require-effective-target` — skip if the target does not support the feature
-- `dg-final` — post-test check (scan-assembler, scan-tree-dump, etc.)
-
----
-
-## Instructions
-
-### Choosing the test type
-
-| Scenario | dg-do |
-|----------|-------|
-| Verify codegen (instruction emitted) | `compile` |
-| Verify assembly instruction count | `compile` |
-| Verify no invalid instructions | `compile` |
-| Verify correct runtime result | `run` |
-| Verify correct runtime on hardware | `run` with effective-target |
-
-Prefer `compile` tests for codegen verification — they run on any host.
-Use `run` tests when correctness (not codegen) is what needs to be validated.
-
-### Effective-target keywords (common)
-
-| Keyword | Meaning |
-|---------|---------|
-| `powerpc_altivec_ok` | AltiVec/VMX supported |
-| `powerpc_vsx_ok` | VSX (POWER7+) supported |
-| `powerpc_p8vector_ok` | POWER8 vector extensions |
-| `powerpc_p9vector_ok` | POWER9 vector extensions |
-| `powerpc_p10_ok` | POWER10 (ISA 3.1) supported |
-| `powerpc_mma_ok` | MMA (matrix multiply assist) |
-| `powerpc_htm_ok` | Hardware Transactional Memory |
-| `powerpc64_ok` | 64-bit mode |
-| `ilp32` | 32-bit ILP32 ABI |
-| `lp64` | 64-bit LP64 ABI |
-| `has_arch_ppc64` | 64-bit PowerPC architecture |
-
-The full list is in `gcc/testsuite/lib/target-supports.exp`.
-Always check the existing keyword before writing a new one.
-
-### Scanning for assembly
-
+## Run test
 ```c
-/* { dg-final { scan-assembler "xxland" } } */
-/* { dg-final { scan-assembler-times "vadduwm" 2 } } */
-/* { dg-final { scan-assembler-not "lvx" } } */
+/* { dg-do run { target power10_hw } } */
+/* { dg-options "-O2 -mdejagnu-cpu=power10" } */
 ```
+Fail with `abort ()`; return 0 on success.
 
-- `scan-assembler "<regex>"` — check pattern appears at least once
-- `scan-assembler-times "<regex>" N` — check exact count
-- `scan-assembler-not "<regex>"` — check pattern is absent
-- Patterns are regexes; escape special characters (`.`, `*`, etc.)
+## Rules
+- CPU: `-mdejagnu-cpu=powerN` in `dg-options`, not `-mcpu=`.
+- Scans: brace-quoted and word-anchored, `{\mxxland\M}`. An unanchored `"xxland"` also matches `xxlandc`.
+- `dg-do compile` + scan for codegen; `dg-do run` only when the result needs executing.
+- One feature per test. Name `pr<N>.c` for a PR, otherwise descriptive.
+- Do not scan for register numbers unless the test is about them.
 
-### Scanning tree dumps
+## Effective targets
+| Compile-time | Meaning |
+|--------------|---------|
+| `powerpc_altivec` | AltiVec enabled |
+| `powerpc_vsx` | current options generate VSX |
+| `power10_ok` | target supports `-mcpu=power10` |
+| `powerpc_htm_ok` | target supports `-mhtm` |
+| `has_arch_pwr8` `has_arch_pwr9` `has_arch_pwr10` | `-mcpu` in effect is at least that |
+| `has_arch_ppc64` `powerpc64` | 64-bit instructions / executing them |
+| `lp64` `ilp32` `int128` | ABI / type availability |
+| `powerpc_pcrel` `powerpc_prefixed_addr` | PC-relative / prefixed insns generated |
+| `be` `le` | endianness; `{ target le }`, `{ xfail be }` |
 
+| Run-time (hardware) | Executes |
+|---------------------|----------|
+| `vmx_hw` | AltiVec |
+| `vsx_hw` | VSX |
+| `p8vector_hw` | power8 vector |
+| `p9vector_hw` | power9 vector |
+| `power10_hw` | power10 |
+
+Before using any other keyword: `grep -n 'proc check_effective_target_<kw> ' gcc/testsuite/lib/target-supports.exp`.
+
+## Scan directives
 ```c
-/* { dg-options "-O2 -fdump-tree-optimized" } */
-/* { dg-final { scan-tree-dump "vec_cond" "optimized" } } */
+/* { dg-final { scan-assembler {\mxxland\M} } } */
+/* { dg-final { scan-assembler-times {\mvadduwm\M} 2 } } */
+/* { dg-final { scan-assembler-not {\mlvx\M} } } */
+/* { dg-final { scan-assembler-times {\mvstribr\M} 1 { target le } } } */
+/* { dg-final { scan-tree-dump "pattern" "optimized" } } */   /* needs -fdump-tree-optimized */
+/* { dg-final { scan-rtl-dump "pattern" "combine" } } */      /* needs -fdump-rtl-combine */
 ```
 
-Use for GIMPLE-level checks. The dump name (`"optimized"`) is the pass name suffix.
-
-### Writing robust tests
-
-- **Do not hard-code register names** unless the test specifically validates register assignment.
-- **Use `-O2` by default** for optimization tests; `-O0` only if testing unoptimized expansion.
-- **Parameterize ISA** with `-mcpu=powerXX` rather than individual `-mfoo` flags where possible.
-- **One feature per test** — keep tests focused; don't combine multiple independent features.
-- **Name files descriptively** — `power10-mma-outer-product.c`, not `test1.c`.
-- **Add a comment** at the top briefly explaining what the test validates.
-- **Match the minimal instruction** — scan for the specific new instruction, not a generic pattern that would match even without your change.
-
-### Debugging a failing test
-
-1. Run the test manually:
-   ```sh
-   gcc -O2 -mcpu=power9 <options> test.c -S -o test.s
-   grep "vadduwm" test.s
-   ```
-2. Verify the effective-target is satisfied for your test machine.
-3. Check that the `dg-options` flags match what you intend.
-4. If `scan-assembler` fails, inspect the `.s` output to see what was actually generated.
-5. For `run` failures, add `fprintf(stderr, ...)` temporarily to debug values.
-
-### Running tests
-
+## Run
+Host Gate (`AGENTS.md`): Power host only, after the user approves. Otherwise give the commands to the user.
+Build directory:
 ```sh
-# Run a single test
 make check-gcc RUNTESTFLAGS="powerpc.exp=my-test.c"
-
-# Run all PowerPC tests
 make check-gcc RUNTESTFLAGS="powerpc.exp"
-
-# Run with a specific compiler
 make check-gcc RUNTESTFLAGS="--target_board=unix/-mcpu=power10 powerpc.exp=my-test.c"
 ```
+Results (in the build directory): `gcc/testsuite/gcc/gcc.sum` and `gcc.log`.
 
----
+## Debug a failure
+1. (Needs a PowerPC compiler: Host Gate.) Compile by hand with the test's `dg-options` (replace `-mdejagnu-cpu=` with `-mcpu=`) and `-S`; read the `.s`.
+2. `UNSUPPORTED`: the effective target is false on this machine.
+3. Wrong count in `scan-assembler-times`: check for unrolling/vectorization or a looser regex.
 
-## Relevant Source Files
-- `gcc/testsuite/gcc.target/powerpc/` — all PowerPC testcases
-- `gcc/testsuite/lib/target-supports.exp` — effective-target definitions
-- `gcc/testsuite/gcc.dg/dg.exp` — DejaGnu framework library
-
----
-
-## Expected Output
-- One `.c` file per feature or fix in `gcc/testsuite/gcc.target/powerpc/`.
-- File includes: `dg-do`, `dg-options`, `dg-require-effective-target` (if ISA-specific), `dg-final` scan.
-- Test must pass on the intended target and be skipped (not fail) on unsupported targets.
-
----
-
-## Common Pitfalls
-- Missing `dg-require-effective-target` — test fails on architectures that don't support the ISA.
-- `scan-assembler` regex that accidentally matches unintended instructions.
-- Using `scan-assembler-times` with a count that depends on optimization level or unrolling.
-- `dg-do run` without ensuring the test can be cross-compiled and executed on the test board.
-- Hard-coding a register number that changes with register allocation decisions.
-- Not using `volatile` on variables whose computation could be optimized away.
+## Pitfalls
+- Unknown effective-target keyword: the test errors instead of being skipped.
+- Count that depends on optimization level or endianness without a selector.
+- `dg-do run` with no `*_hw` guard: fails on older hardware.

@@ -1,3 +1,7 @@
+---
+name: regression-analysis
+description: Classify and root-cause a failing GCC test (new, pre-existing, flaky) from logs, assembly and RTL dumps.
+---
 # Skill: regression-analysis
 
 ## Purpose
@@ -26,6 +30,9 @@ Every failure falls into one of these categories:
 ---
 
 ## Instructions
+
+Host Gate (`AGENTS.md`): reproducing, bisecting and dumping need a Power host and the
+user's approval. Otherwise analyse the logs and dumps the user provides.
 
 ### Step 1: Reproduce the failure
 
@@ -77,9 +84,8 @@ This is the fastest way to understand why a scan failed.
 ### Step 5: Inspect the RTL
 
 ```sh
-gcc -O2 -mcpu=powerXX <flags> failing-test.c -S \
-    -fdump-rtl-all -save-temps
-ls /tmp/*.ltrans* /tmp/*.expand /tmp/*.combine ...
+gcc -O2 -mcpu=powerXX <flags> failing-test.c -S -fdump-rtl-all
+ls failing-test.c.*r.*        # one file per pass: <src>.<NNN>r.<pass>
 ```
 
 Use `-fdump-rtl-final` to see the last RTL before assembly emission.
@@ -103,7 +109,7 @@ In the task workspace, record:
 | Instruction not generated | Pattern condition false (`TARGET_xxx`), or combine/peephole folded it away differently |
 | Wrong instruction generated | Pattern recognition failure; a more general pattern matched instead |
 | ICE during compilation | Assertion failure; check the crash backtrace |
-| `cannot reload` error | Register allocation failure; constraint issue |
+| `unable to find a register to spill` / `insn does not satisfy its constraints` | Register allocation failure; constraint issue |
 | Wrong runtime result | Endianness issue, mode bug, or UB in testcase |
 | Test times out | Infinite loop in generated code or in the compiler itself |
 | All tests fail on a board | Cross-compilation or board connectivity issue |

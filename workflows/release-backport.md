@@ -27,7 +27,9 @@ Record the commit hash and subject in `TASK.md`.
 Check whether the upstream fix depends on other trunk commits that are not on the branch:
 
 ```sh
-git log <trunk-commit>^..HEAD --oneline -- gcc/config/rs6000/ | head -20
+git show --stat <trunk-commit>          # files the fix touches
+# trunk commits to those files that the branch does not have:
+git log --oneline releases/gcc-XX..<trunk-commit> -- <files>
 ```
 
 For each dependency:
@@ -41,7 +43,7 @@ Record the dependency table in `TASK.md`.
 
 ```sh
 git checkout releases/gcc-XX
-git cherry-pick <trunk-commit>
+git gcc-backport <trunk-commit>   # = git cherry-pick -x; alias from contrib/gcc-git-customization.sh
 ```
 
 If conflicts occur:
@@ -50,6 +52,8 @@ If conflicts occur:
 - The resolution must be functionally equivalent to the trunk fix.
 
 ## Step 5: Test the backport
+
+Host Gate (`AGENTS.md`): Power host only, after the user approves.
 
 ```sh
 # Build
@@ -72,33 +76,14 @@ Follow the `bootstrap` workflow.
 
 ## Step 7: Write the commit message
 
-The backport commit message should:
-- Reference the upstream commit: `Backported from trunk: <commit-hash>`
-- State the original commit message subject.
-- Note any conflict resolutions.
-
-Example:
-```
-rs6000: Fix vec_sel mask order on LE (backport)
-
-Backport of trunk commit abc123:
-  rs6000: Fix incorrect vec_sel codegen on LE POWER9
-
-No conflicts.
-
-gcc/ChangeLog:
-
-	* config/rs6000/rs6000-call.cc (rs6000_expand_vector_select):
-	Reverse mask operand order for LE targets.
-
-gcc/testsuite/ChangeLog:
-
-	* gcc.target/powerpc/vec-sel-le-regression.c: New test.
-```
+Keep the original commit message unchanged, including its ChangeLog block.
+`git gcc-backport` appends `(cherry picked from commit <hash>)`; keep that line.
+If conflicts were resolved by hand, adjust the ChangeLog entries to match the branch.
+Check with `git gcc-verify`.
 
 ## Step 8: Submit for approval
 
-Post to `gcc-patches@gcc.gnu.org` with `[BACKPORT GCC-XX]` in the subject.
+Ask for approval on `gcc-patches@gcc.gnu.org`; name the target branch in the mail (`patch-submission` skill).
 CC the Release Manager and rs6000 maintainers.
 Include the test results summary.
 Record the mailing list URL in `TASK.md`.

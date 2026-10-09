@@ -1,3 +1,7 @@
+---
+name: rtl-patterns
+description: Write or debug rs6000 define_insn/define_expand patterns: predicates, constraints, conditions, UNSPECs.
+---
 # Skill: rtl-patterns
 
 ## Purpose
@@ -30,13 +34,13 @@ Write, modify, and debug RTL instruction patterns for the rs6000 machine descrip
 - **predicate**: validates the operand's RTL form. Defined in `predicates.md`.
 - **constraint**: controls register allocation. Defined in `constraints.md`. The output constraint uses `=` prefix.
 - **condition**: C expression evaluated at compile time. Use `TARGET_xxx` flags.
-- **template**: assembler string. Use `%0`, `%1`, etc. for operands; `%x0` for alternate forms.
-- **UNSPEC index**: must be unique. Check `rs6000.md` for the full UNSPEC list before adding.
+- **template**: assembler string. Use `%0`, `%1`, etc. for operands; `%x0` for a VSX register (`wa`) operand.
+- **UNSPEC**: a name from a `define_c_enum "unspec"` list (each of `rs6000.md`, `vsx.md`, `altivec.md`, ... has one). Values are assigned automatically.
 
 ### define_expand
 ```
 (define_expand "<name>"
-  [(set (match_operand:<MODE> 0 "<predicate>" "=<constraint>")
+  [(set (match_operand:<MODE> 0 "<predicate>")
         ...)]
   "<condition>"
 {
@@ -47,7 +51,8 @@ Write, modify, and debug RTL instruction patterns for the rs6000 machine descrip
 ```
 
 - Use `define_expand` when the operation cannot be expressed as a single RTL template.
-- The C body must end with `DONE;` or `FAIL;`.
+- Constraints are not used in `define_expand`; omit them.
+- End the C body with `DONE;` when it emitted all the RTL itself. Without `DONE`, the RTL template is emitted after the C code runs. `FAIL` is allowed only for patterns documented as allowed to fail.
 - All emitted patterns must match a `define_insn`.
 
 ---
@@ -56,7 +61,7 @@ Write, modify, and debug RTL instruction patterns for the rs6000 machine descrip
 
 ### Writing a new define_insn
 
-1. **Find a similar pattern.** Search the relevant `.md` file (e.g., `vsx.md`, `power10.md`) for a pattern doing a similar operation. Use it as a template.
+1. **Find a similar pattern.** Search the relevant `.md` file (e.g., `vsx.md`, `altivec.md`) for a pattern doing a similar operation. Use it as a template.
 
 2. **Choose the correct predicate.** Check `predicates.md` for an existing predicate that matches your operand type. Prefer reuse over writing a new predicate.
 
@@ -64,12 +69,12 @@ Write, modify, and debug RTL instruction patterns for the rs6000 machine descrip
    - `v` — Altivec registers (VSR 32–63)
    - `wa` — any VSX register (VSR 0–63)
    - `r` — general-purpose register
-   - `f` — floating-point register (FPR, VSR 0–31)
-   - `ww` — preferred constraint for scalar float in VSX
+   - `b` — base register (GPR except r0)
+   - `d` — floating-point register (FPR, VSR 0–31)
 
 4. **Set the condition.** Use the most specific `TARGET_xxx` flag. Do not leave the condition as `""` for ISA-specific patterns.
 
-5. **Verify UNSPEC uniqueness.** Before adding `UNSPEC_xxx`, search `rs6000.md` for the complete UNSPEC enum list and add to it.
+5. **Add the UNSPEC name.** `grep -n UNSPEC_xxx gcc/config/rs6000/*.md`; if it is new, add it to the `define_c_enum "unspec"` list of the `.md` file that uses it.
 
 6. **Verify mode consistency.** Every operand's mode must be consistent. Mismatched modes cause silent codegen failures.
 
@@ -101,10 +106,11 @@ The `define_expand` name is what `optabs` and GCC internals call. The underlying
 | `nonimmediate_operand` | register or memory |
 | `memory_operand` | memory reference |
 | `const_int_operand` | integer constant |
-| `altivec_register_operand` | VSR 32–63 (VMX) |
-| `vsx_register_operand` | VSR 0–63 |
-| `vfloat_operand` | VSX float register |
-| `rs6000_cbf_comparison_operator` | comparison for branch |
+| `gpc_reg_operand` | register that is not special (the usual rs6000 register predicate) |
+| `altivec_register_operand` | Altivec register |
+| `vsx_register_operand` | VSX register |
+| `vfloat_operand` | vector register for floating-point vectors (Altivec or VSX) |
+| `vlogical_operand` | vector register for logical operations |
 
 See `predicates.md` for the full list and definitions.
 
@@ -114,19 +120,19 @@ See `predicates.md` for the full list and definitions.
 
 | Constraint | Register class |
 |-----------|---------------|
-| `r` | GPR |
-| `f` | FPR (VSR 0-31) |
-| `v` | VMX (VSR 32-63) |
-| `wa` | any VSR (0-63) |
-| `ww` | VSX scalar FP |
-| `wi` | VSX 64-bit int |
-| `wz` | VSX load-zero form |
-| `b` | base register (GPR, not r0) |
-| `I` | signed 16-bit immediate |
-| `J` | unsigned 16-bit immediate |
-| `K` | unsigned 16-bit shifted |
+| `r` | GPR r0–r31 |
+| `b` | base register: GPR except r0 |
+| `d` (`f` is the same) | FPR f0–f31 (= vs0–vs31) |
+| `v` | Altivec v0–v31 (= vs32–vs63) |
+| `wa` | any VSX register vs0–vs63; print with `%x<n>` |
+| `wd wf wi ws ww` | legacy aliases of `wa`; do not use in new code |
+| `I` | signed 16-bit constant |
+| `K` | unsigned 16-bit constant |
+| `L` | signed 16-bit constant shifted left 16 |
+| `J` | unsigned 16-bit constant shifted left 16 |
+| `eI` | signed 34-bit constant (prefixed instructions) |
 
-See `constraints.md` for the full list.
+Full list with descriptions: `gcc/doc/md.texi`, table "PowerPC and IBM RS6000"; definitions in `constraints.md`.
 
 ---
 
@@ -134,7 +140,7 @@ See `constraints.md` for the full list.
 - `gcc/config/rs6000/rs6000.md` — top-level machine description and UNSPEC list
 - `gcc/config/rs6000/predicates.md` — all predicate definitions
 - `gcc/config/rs6000/constraints.md` — all constraint definitions
-- `gcc/config/rs6000/altivec.md`, `vsx.md`, `vector.md`, `power9.md`, `power10.md`, `mma.md` — ISA-specific patterns
+- `gcc/config/rs6000/altivec.md`, `vsx.md`, `vector.md`, `mma.md`, `crypto.md`, `dfp.md`, `htm.md` — feature patterns (`power8.md`, `power9.md`, `power10.md` are scheduling descriptions, not instruction patterns)
 - `gcc/config/rs6000/rs6000.cc` — helper RTL generation functions
 - `gcc/recog.cc` — instruction recognition logic
 - `gcc/doc/md.texi` — machine description language reference
@@ -144,14 +150,15 @@ See `constraints.md` for the full list.
 ## Expected Output
 - New or modified `define_insn` / `define_expand` in the appropriate `.md` file.
 - New or modified predicate in `predicates.md` (if needed).
-- Verified unique UNSPEC index if using UNSPEC.
+- New `UNSPEC_*` name added to a `define_c_enum` list, if one is needed.
 
 ---
 
 ## Common Pitfalls
-- Adding UNSPEC without a unique index (duplicate UNSPECs cause silent miscompiles).
+- Reusing an existing `UNSPEC_*` name for a different operation.
+- Writing a non-canonical RTL shape (see `rtl-canonical-forms` skill).
 - Mode mismatch between `define_expand` operands and `define_insn` operands.
 - Using `""` condition on an ISA-specific pattern (pattern fires unconditionally).
 - Forgetting `=` on the output constraint.
 - Using a predicate that accepts memory when the pattern does not handle it.
-- Not regenerating `insn-recog.cc` after pattern changes (run `make`).
+- Not rebuilding after pattern changes (`make -C gcc` in the build dir regenerates the `insn-*.cc` files).

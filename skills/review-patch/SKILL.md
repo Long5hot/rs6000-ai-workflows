@@ -1,3 +1,7 @@
+---
+name: review-patch
+description: Review an rs6000 patch: predicates, constraints, modes, TARGET guards, builtins, tests, docs.
+---
 # Skill: review-patch
 
 ## Purpose
@@ -37,7 +41,7 @@ regression risk, and submission readiness.
 
 **RTL correctness:**
 - Verify mode consistency across all operands.
-- Verify `UNSPEC` numbering does not conflict with existing UNSPECs in `rs6000.md`.
+- Verify each new `UNSPEC_*` name is added to a `define_c_enum "unspec"` list and is not already used (`grep -n UNSPEC_<NAME> gcc/config/rs6000/*.md`).
 - Check that `define_expand` patterns set up RTL correctly before calling `emit_insn`.
 - Verify scratch registers are declared with correct constraints.
 
@@ -50,7 +54,7 @@ regression risk, and submission readiness.
 - Cross-check against `rs6000-cpus.def` and `rs6000.h` for the correct flag.
 
 **Builtin-specific:**
-- Verify `.def` entry matches expansion code in `rs6000-builtin.cc`.
+- Verify the `.def` entry's prototype matches the modes of the pattern it names, and that it sits in the correct `[stanza]`.
 - Verify overload entry in `rs6000-overload.def` if applicable.
 - Verify documentation in `gcc/doc/extend.texi`.
 
@@ -61,13 +65,13 @@ regression risk, and submission readiness.
 
 ### 5. Bootstrap risk
 - Changes to `rs6000.cc`, `rs6000.h`, or core `.md` files require a full bootstrap.
-- Changes to a single `.md` file can often be validated with a targeted rebuild.
+- Any patch needs a full bootstrap and regression test before submission; an incremental build is only a first check.
 - Flag any changes that alter fundamental data structures or enum values.
 
 ### 6. Test coverage
 - Verify at least one new test exists in `gcc/testsuite/gcc.target/powerpc/`.
 - Test must use `dg-require-effective-target` if ISA-specific.
-- Test must include a `scan-assembler` or execution check; compile-only is insufficient for new codegen paths.
+- Test must include a `scan-assembler` or execution check; `dg-do compile` with no scan is insufficient for new codegen paths.
 - Check that the test actually exercises the new code path (verify the expected instruction appears).
 
 ### 7. Documentation
@@ -112,4 +116,4 @@ Produce a structured review with sections:
 - Adding a `define_expand` that emits patterns not recognized by any `define_insn`.
 - Missing `rs6000-overload.def` entry for a new overloaded builtin.
 - Writing a test that compiles but does not scan for the expected output.
-- Updating `.def` but not updating the expansion code (or vice versa).
+- `.def` prototype types that do not match the named pattern's modes.

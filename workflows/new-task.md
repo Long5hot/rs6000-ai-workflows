@@ -4,6 +4,12 @@ Follow these steps every time you start a new task.
 
 ---
 
+## Step 0: Host Gate
+
+Run `sh .ai/bin/env-check.sh` (see `AGENTS.md`). Record the `policy=` line in `TASK.md`.
+
+---
+
 ## Step 1: Determine the task name
 
 Choose a short, lowercase, hyphenated identifier.

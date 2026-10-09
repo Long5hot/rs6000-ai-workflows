@@ -110,7 +110,7 @@ Flags:
 
 - [ ] Incremental build passes
 - [ ] Full bootstrap passes
-- [ ] Regression suite: no new failures (especially no FAIL → FAIL regressions)
+- [ ] Regression suite: no new failures (especially no PASS → FAIL regressions)
 
 
 ## Review Notes

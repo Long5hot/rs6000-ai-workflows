@@ -1,8 +1,12 @@
+---
+name: register-allocation
+description: Debug IRA/LRA problems on rs6000: spills, constraint failures, register classes, move costs.
+---
 # Skill: register-allocation
 
 ## Purpose
 Investigate, debug, and fix register allocation issues in the rs6000 backend,
-including IRA, LRA, reload, register class definitions, and spill behavior.
+including IRA, LRA, register class definitions, and spill behavior.
 
 ## When to Use
 - Investigating spill code generation
@@ -20,14 +24,12 @@ RTL after instruction selection
         │
        IRA  (gcc/ira.cc) — global allocator using allocation regions
         │
-       LRA  (gcc/lra.cc) — local constraint satisfaction, replaces reload
-        │
-  [reload if configured without LRA]
+       LRA  (gcc/lra.cc) — local constraint satisfaction; pass and dump name: reload
         │
  RTL with hard registers
 ```
 
-LRA is the default for rs6000. `reload.cc` is legacy; most new work uses LRA.
+rs6000 uses LRA only (`-mlra` is an ignored legacy option). `reload.cc` is not used by rs6000.
 
 ---
 
@@ -47,9 +49,9 @@ Key register classes:
 | `CTR_REGS` | CTR | — |
 | `CR_REGS` | Condition registers | — |
 | `CA_REGS` | Carry bit | — |
-| `NO_REGS` | None (for immediates) | — |
+| `NO_REGS` | None | — |
 
-Register class hierarchy is defined by `REG_CLASS_SUBCLASSES` and `reg_class_subset_p`.
+Subset relations follow from `REG_CLASS_CONTENTS`; query them with `reg_class_subset_p`.
 
 ---
 
@@ -57,8 +59,8 @@ Register class hierarchy is defined by `REG_CLASS_SUBCLASSES` and `reg_class_sub
 
 ### Investigating a spill
 
-1. Compile with `-fdump-rtl-ira` and `-fdump-rtl-lra` to observe allocation decisions.
-2. Look for pseudo registers that are assigned to memory (`.spill`).
+1. Compile with `-fdump-rtl-ira` and `-fdump-rtl-reload` (LRA's dump) to observe allocation decisions.
+2. Look for pseudo registers that are assigned to memory.
 3. Identify which constraint forced an allocation that could not be satisfied.
 4. Check whether the live range of the conflicting pseudo spans a hard-register requirement.
 
@@ -67,7 +69,7 @@ Register class hierarchy is defined by `REG_CLASS_SUBCLASSES` and `reg_class_sub
 These typically manifest as:
 ```
 error: unable to find a register to spill
-error: constraint requires reload
+error: insn does not satisfy its constraints:
 ```
 
 Steps:
@@ -89,7 +91,6 @@ Hard-register constraints (e.g., `{r3}`, `{v24}`) narrow the allocator's choices
 IRA allocation costs are computed by `ira-costs.cc`. Target-specific costs are set via:
 - `TARGET_REGISTER_MOVE_COST` — cost of moving between register classes.
 - `TARGET_MEMORY_MOVE_COST` — cost of load/store for a class.
-- `TARGET_REGISTER_USAGE_FREQUENCY` — hooks for frequency-sensitive tuning.
 
 For rs6000, these are implemented in `rs6000.cc`. Search for `rs6000_register_move_cost`.
 
@@ -114,7 +115,6 @@ LRA constraint satisfaction is in `gcc/lra-constraints.cc`.
 - `gcc/lra.cc` — LRA top level
 - `gcc/lra-constraints.cc` — LRA constraint satisfaction
 - `gcc/lra-assigns.cc` — LRA assignment
-- `gcc/reload.cc` — legacy reload (reference only)
 
 ---
 
@@ -123,10 +123,9 @@ LRA constraint satisfaction is in `gcc/lra-constraints.cc`.
 | Flag | Purpose |
 |------|---------|
 | `-fdump-rtl-ira` | Dump RTL after IRA |
-| `-fdump-rtl-lra` | Dump RTL after LRA |
-| `-fdump-rtl-reload` | Dump RTL after reload (legacy) |
+| `-fdump-rtl-reload` | Dump RTL after LRA (the pass is named `reload`; there is no `-fdump-rtl-lra`) |
 | `-fdump-rtl-all` | Dump all RTL passes |
-| `-fira-verbose=N` | IRA verbosity (N=1..10) |
+| `-fira-verbose=N` | IRA dump verbosity (default 5; N ≥ 10 writes to stderr) |
 | `-flra-remat` | Enable/disable LRA rematerialization |
 
 ---
