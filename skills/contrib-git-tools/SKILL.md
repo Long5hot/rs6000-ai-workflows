@@ -16,7 +16,7 @@ email, remote). Never run it; ask the user to.
 |------|-------|--------|
 | ChangeLog skeleton from a diff | `git diff \| git gcc-mklog` | `git diff \| contrib/mklog.py` |
 | ... with PR lines | `git gcc-mklog -b 122431 <patch>` | `contrib/mklog.py -b 122431 <patch>` |
-| Commit with generated skeleton | `git gcc-commit-mklog -b 122431` | — (alias only) |
+| Commit with generated skeleton | `git gcc-commit-mklog -b 122431` | — (needs the alias and the `prepare-commit-msg` hook, both installed by the customization script) |
 | Check commit message + ChangeLog | `git gcc-verify [-n N] [-p] [<rev>]` | `contrib/gcc-changelog/git_check_commit.py ...` |
 | GNU style check of a commit | `git gcc-style [<rev>]` | `git show <rev> \| contrib/check_GNU_style.py -` |
 | GNU style check of the working tree | — | `git diff \| contrib/check_GNU_style.py -` |

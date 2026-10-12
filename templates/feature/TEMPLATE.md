@@ -30,9 +30,9 @@ Delete this instruction line before use.
 
 <!-- Identify the minimal set of files to change. -->
 
-- [ ] `gcc/config/rs6000/rs6000-cpus.def` — ISA mask (if new ISA feature)
-- [ ] `gcc/config/rs6000/rs6000.h` — TARGET macro
-- [ ] `gcc/config/rs6000/rs6000.opt` — option (if user-facing)
+- [ ] `gcc/config/rs6000/rs6000.opt` — option; `Mask(X)` generates `OPTION_MASK_X` and `TARGET_X`
+- [ ] `gcc/config/rs6000/rs6000-cpus.def` — add the mask to the CPU mask sets (if new ISA feature)
+- [ ] `gcc/config/rs6000/rs6000.h` — derived `TARGET_*` macro (only if needed)
 - [ ] `gcc/config/rs6000/rs6000.cc` — backend hooks
 - [ ] `gcc/config/rs6000/<feature>.md` — instruction patterns
 - [ ] `gcc/config/rs6000/predicates.md` — predicates (if new)

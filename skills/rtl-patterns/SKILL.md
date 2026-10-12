@@ -52,7 +52,7 @@ Write, modify, and debug RTL instruction patterns for the rs6000 machine descrip
 
 - Use `define_expand` when the operation cannot be expressed as a single RTL template.
 - Constraints are not used in `define_expand`; omit them.
-- End the C body with `DONE;` when it emitted all the RTL itself. Without `DONE`, the RTL template is emitted after the C code runs. `FAIL` is allowed only for patterns documented as allowed to fail.
+- End the C body with `DONE;` when it emitted all the RTL itself. Without `DONE`, the RTL template is emitted after the C code runs. `FAIL` is valid only where the caller can try another strategy; `gcc/doc/md.texi` documents it for binary and bit-field operations, so check the standard name's documentation before using it.
 - All emitted patterns must match a `define_insn`.
 
 ---
@@ -76,13 +76,13 @@ Write, modify, and debug RTL instruction patterns for the rs6000 machine descrip
 
 5. **Add the UNSPEC name.** `grep -n UNSPEC_xxx gcc/config/rs6000/*.md`; if it is new, add it to the `define_c_enum "unspec"` list of the `.md` file that uses it.
 
-6. **Verify mode consistency.** Every operand's mode must be consistent. Mismatched modes cause silent codegen failures.
+6. **Verify mode consistency.** Every operand's mode must be consistent. Mismatched modes lead to `unrecognizable insn` ICEs or wrong code.
 
 ### Writing a new define_expand
 
 Use a `define_expand` when:
 - The operation requires multiple RTL instructions.
-- The operation requires scratch registers.
+- The operation needs new pseudo registers (`gen_reg_rtx`).
 - Mode conversion is required before the underlying insn.
 - Operand preparation (e.g., force_reg) is needed.
 

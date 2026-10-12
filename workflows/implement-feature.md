@@ -32,9 +32,9 @@ Record this list in `TASK.md` under "Affected Files".
 
 Follow this order to avoid forward references:
 
-1. `rs6000-cpus.def` — ISA mask (if new ISA feature)
-2. `rs6000.h` — TARGET macro
-3. `rs6000.opt` — option (if user-facing)
+1. `rs6000.opt` — option with `Mask(X) Var(rs6000_isa_flags)`; this generates `OPTION_MASK_X` and `TARGET_X` (if new ISA feature or option)
+2. `rs6000-cpus.def` — add the new mask to the CPU mask sets (`ISA_*_MASKS*`, `POWERPC_MASKS`)
+3. `rs6000.h` — only if a derived `TARGET_*` macro is needed
 4. Feature `.md` file — instruction pattern
 5. `predicates.md` — new predicate (if needed)
 6. `rs6000-builtins.def` — builtin entry

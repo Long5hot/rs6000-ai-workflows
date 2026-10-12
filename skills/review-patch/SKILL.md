@@ -51,7 +51,7 @@ regression risk, and submission readiness.
 
 **TARGET guard:**
 - Every new pattern that is ISA-specific must be guarded by a `TARGET_xxx` predicate in the condition field.
-- Cross-check against `rs6000-cpus.def` and `rs6000.h` for the correct flag.
+- Cross-check against `rs6000.opt` (where `Mask()` defines the flag), `rs6000-cpus.def` and `rs6000.h` for the correct flag.
 
 **Builtin-specific:**
 - Verify the `.def` entry's prototype matches the modes of the pattern it names, and that it sits in the correct `[stanza]`.

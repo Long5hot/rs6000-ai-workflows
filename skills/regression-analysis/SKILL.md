@@ -54,8 +54,8 @@ Key failure types:
 - `scan-assembler` — instruction not generated
 - `scan-assembler-not` — forbidden instruction was generated
 - `scan-assembler-times` — wrong count
-- `compile` — compilation error or ICE
-- `run` — wrong runtime result or crash
+- `(test for excess errors)` — unexpected diagnostic, compilation error or ICE
+- `execution test` — wrong runtime result or crash
 - `XPASS` — unexpectedly passed (xfail test now passes, may need updating)
 
 ### Step 3: Determine if the failure is newly introduced

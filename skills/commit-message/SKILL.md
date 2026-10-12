@@ -60,7 +60,7 @@ Omit the `[PR…]` tag and `PR` lines when there is no Bugzilla PR.
 - Do not duplicate the ChangeLog entries in the body.
 
 ### ChangeLog entries
-- One `ChangeLog:` section per top-level directory changed.
+- One `ChangeLog:` section per directory that has its own `ChangeLog` file (`gcc/`, `gcc/testsuite/`, `libgcc/`, ...).
 - For rs6000 work: `gcc/ChangeLog:` and `gcc/testsuite/ChangeLog:`.
 - Format: `\t* <file> (<symbol>): <action>.`
 - Use a tab (`\t`) for indentation — not spaces. The checker rejects spaces.

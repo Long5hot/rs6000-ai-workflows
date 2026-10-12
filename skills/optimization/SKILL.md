@@ -27,7 +27,7 @@ Source → GENERIC → GIMPLE (SSA) → RTL → Assembly
 
 For rs6000 backend work, optimizations typically happen at:
 - **RTL level**: peepholes, define_peephole2, target-specific passes.
-- **Target lowering**: rs6000-string.cc (memcpy/strlen), rs6000-p8swap.cc (P8 vector swap elimination).
+- **Target lowering**: rs6000-string.cc (block move/clear, memcmp, strncmp), rs6000-p8swap.cc (P8 vector swap elimination).
 - **Instruction selection**: combine pass interacts with patterns to fold operations.
 
 ---
@@ -59,9 +59,10 @@ Rules:
 ### Writing a target-specific pass
 
 1. Define the pass struct in the relevant `.cc` file (model after `rs6000-p8swap.cc`).
-2. Register the pass in `rs6000-passes.def`.
+2. Register the pass in `rs6000-passes.def` (`INSERT_PASS_BEFORE` / `INSERT_PASS_AFTER`).
+   Declare `make_pass_<name>` in `rs6000-protos.h`. For a new source file, add its object to `extra_objs` in `gcc/config.gcc` and a rule in `t-rs6000`.
 3. Place it at the correct point in the pass pipeline. Consult `gcc/passes.def` for anchor points.
-4. Guard the pass with `TARGET_xxx` so it only runs when the feature is enabled.
+4. Guard the pass in its `gate ()` method with `TARGET_xxx` so it only runs when the feature is enabled.
 
 ### Evaluating a missed optimization
 

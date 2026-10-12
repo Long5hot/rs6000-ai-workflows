@@ -13,7 +13,7 @@ Use this before searching the repository.
 | `gcc/config/rs6000/rs6000.h` | Target machine header: register classes, modes, macros |
 | `gcc/config/rs6000/rs6000-internal.h` | Internal declarations shared across rs6000 source files |
 | `gcc/config/rs6000/rs6000-protos.h` | Function prototypes exposed to the rest of GCC |
-| `gcc/config/rs6000/rs6000-opts.h` | Option struct declarations |
+| `gcc/config/rs6000/rs6000-opts.h` | Definitions needed for option handling (enums used by `rs6000.opt`) |
 | `gcc/config/rs6000/rs6000.opt` | Compiler options (`-m` flags) |
 | `gcc/config/rs6000/rs6000-cpus.def` | CPU names, ISA feature masks, tune flags |
 
@@ -60,7 +60,7 @@ Use this before searching the repository.
 
 | File | Purpose |
 |------|---------|
-| `gcc/config/rs6000/rs6000-string.cc` | String/memory operation expansion (memcpy, strlen, etc.) |
+| `gcc/config/rs6000/rs6000-string.cc` | Block move, block clear, memcmp and strncmp/strcmp inline expansion |
 | `gcc/config/rs6000/rs6000-p8swap.cc` | Power8 vector element swap optimization pass |
 | `gcc/config/rs6000/rs6000-pcrel-opt.cc` | PC-relative load/store optimization pass |
 | `gcc/config/rs6000/rs6000-passes.def` | Registration of custom rs6000 RTL passes |
@@ -72,7 +72,7 @@ Use this before searching the repository.
 | `gcc/config/rs6000/linux.h`, `linux64.h`, `linuxaltivec.h` | Linux (BE/LE) target headers |
 | `gcc/config/rs6000/aix.h`, `aix71.h`, `aix72.h`, `aix73.h` | AIX target headers |
 | `gcc/config/rs6000/darwin.h` | Darwin/macOS target header |
-| `gcc/config/rs6000/sysv4.h`, `eabi.h` | Embedded ABI target headers |
+| `gcc/config/rs6000/sysv4.h`, `eabi.h` | System V.4 (ELF) and embedded ABI target headers |
 | `gcc/config/rs6000/rs6000-linux.cc` | Linux-specific target hooks |
 
 ## rs6000 Backend — Intrinsic Headers (installed with compiler)

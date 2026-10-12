@@ -253,8 +253,8 @@ Always add appropriate `TARGET_*` guards.
 
 For new ISA support:
 
-- Add `OPTION_MASK_*`
-- Add `TARGET_*`
+- Add the option in `rs6000.opt` with `Mask(X) Var(rs6000_isa_flags)`; that generates `OPTION_MASK_X` and `TARGET_X` (`option-files` skill)
+- Add the mask to the CPU mask sets in `rs6000-cpus.def`
 - Guard every pattern
 - Update CPU feature masks
 - Verify interactions with existing ISA levels
